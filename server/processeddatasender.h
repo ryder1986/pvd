@@ -17,8 +17,6 @@ public:
     }
     void send(QByteArray datagram,const QHostAddress addr)
     {
-      //  QHostAddress tmp("192.168.1.217");
-        prt(debug,"broadcast %s to port %d",datagram.data(),Pvd::SERVER_DATA_OUTPUT_PORT);
         udp_skt->writeDatagram(datagram.data(), datagram.size(),
                                addr, Pvd::SERVER_DATA_OUTPUT_PORT);
     }

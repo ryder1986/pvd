@@ -60,7 +60,7 @@ public:
     }
     bool get_frame(Mat &frame)
     {
-        if(frame_list.size()>5){
+        if(frame_list.size()>1){
             frame=frame_list.first();
             frame_list.pop_front();
             return true;
@@ -72,11 +72,11 @@ public:
     {
         bool ret=false;
 
-            if(vcap.isOpened()){
-                ret=true;
-                w=vcap.get(CV_CAP_PROP_FRAME_WIDTH);
-                h=vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
-            }
+        if(vcap.isOpened()){
+            ret=true;
+            w=vcap.get(CV_CAP_PROP_FRAME_WIDTH);
+            h=vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
+        }
 
         return ret;
     }
@@ -84,7 +84,6 @@ public:
 private:
     void run()
     {
-
         vcap=   VideoCapture( url.toStdString().data());
         if(!vcap.isOpened()){
             prt(info,"fail to open %s", url.toStdString().data());
@@ -117,7 +116,7 @@ private:
                     prt(info,"restarting %s      ", url.toStdString().data());
                 }else{
                     frame_rate++;
-                    if(frame_list.size()<10){
+                    if(frame_list.size()<3){
                         frame_list.push_back(mat_rst);
                     }
                     if(frame_wait_time)
@@ -129,7 +128,7 @@ private:
                 }else{
                     this_thread::sleep_for(chrono::seconds(1));
                 }
-                vcap=   VideoCapture( url.toStdString().data());
+                vcap=VideoCapture( url.toStdString().data());
             }
         }
         if( vcap.isOpened())
@@ -141,8 +140,8 @@ signals:
 public slots:
     void handle_time_out()
     {
-     //    prt(info,"%s src rate %d",url.toStdString().data(),frame_rate);
-         frame_rate=0;
+        //    prt(info,"%s src rate %d",url.toStdString().data(),frame_rate);
+        frame_rate=0;
     }
 
 private:

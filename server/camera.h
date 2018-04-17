@@ -108,9 +108,14 @@ public:
         VideoProcessor::m_result processed_result;
         processed_result.width=mat_w;
         processed_result.height=mat_h;
-//        processed_result.back_count=0;
-//        processed_result.front_count=0;
+        //        processed_result.back_count=0;
+        //        processed_result.front_count=0;
         processed_result.exist=false;
+        processed_result.back_count=0;
+        processed_result.count=0;
+        processed_result.duration=0;
+        processed_result.front_count=0;
+        processed_result.other_count=0;
         if(processor->real_process(detect_area,processed_result)){
             //   rst.append(QString::number(mat_w)).append(",").append(QString::number(mat_h)).append(":");
             //            foreach (Rect r, processed_result.rects) {
@@ -141,13 +146,29 @@ public:
             //                rst.append(x_str).append(",").append(y_str).append(",").append(width_str).append(",").append(height_str).append(":");
             //            }
             ret=true;
-
+            rst=pack_rst(processed_result);
+            QByteArray ba;
+            if(true){
+                ba.clear();
+                ba.append(rst);
+                //  emit output(ba);
+                send_out(ba);
+            }
+        }else{
+            rst=pack_rst(processed_result);
+            QByteArray ba;
+            if(true){
+                ba.clear();
+                ba.append(rst);
+                //  emit output(ba);
+                send_out(ba);
+            }
         }
-        rst=pack_rst(processed_result);
-//        processed_result.count=processed_result.rects.size();
-//        processed_result.duration=1;
-//        processed_result.exist=(processed_result.rects.size()>0)?1:0;
-//        processed_result.other_count=0;
+
+        //        processed_result.count=processed_result.rects.size();
+        //        processed_result.duration=1;
+        //        processed_result.exist=(processed_result.rects.size()>0)?1:0;
+        //        processed_result.other_count=0;
 
         return ret;
 
@@ -271,15 +292,14 @@ private:
         ProcessedDataSender *s=ProcessedDataSender::get_instance();
         foreach (QString ip, ip_list) {
             QString str(ba);
-            prt(debug,"send %s to %s",str.toStdString().data(),ip.toStdString().data())
-                    s->send(ba,QHostAddress(ip));
+            s->send(ba,QHostAddress(ip));
         }
     }
 protected:
     void run()
     {
         int i=0;
-        QByteArray ba;
+        //  QByteArray ba;
         Mat frame;
         //    Mat frame960x540;
         threadid=(int)QThread::currentThread();
@@ -292,13 +312,13 @@ protected:
                 //  frame960x540=frame.resize(960,540);
                 // cv::resize(frame, frame960x540, cv::Size(960,540) );
                 bool ret=process(frame,rst);
-            //  if(ret){
-                     if(true){
-                            ba.clear();
-                    ba.append(rst);
-                    //  emit output(ba);
-                    send_out(ba);
-                }
+                //  if(ret){
+//                if(true){
+//                    ba.clear();
+//                    ba.append(rst);
+//                    //  emit output(ba);
+//                    send_out(ba);
+//                }
             }else{
                 //prt(info,"get no frame");
             }
