@@ -110,7 +110,7 @@ public:
         processed_result.height=mat_h;
 //        processed_result.back_count=0;
 //        processed_result.front_count=0;
-
+        processed_result.exist=false;
         if(processor->real_process(detect_area,processed_result)){
             //   rst.append(QString::number(mat_w)).append(",").append(QString::number(mat_h)).append(":");
             //            foreach (Rect r, processed_result.rects) {
@@ -119,6 +119,7 @@ public:
             //            }
 
             int i;
+
             for(i=0;i<processed_result.rects.size();i++)
             {
                 processed_result.rects[i].x+=rct.x;
