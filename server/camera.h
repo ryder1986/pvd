@@ -140,8 +140,9 @@ public:
             //                rst.append(x_str).append(",").append(y_str).append(",").append(width_str).append(",").append(height_str).append(":");
             //            }
             ret=true;
-            rst=pack_rst(processed_result);
+
         }
+        rst=pack_rst(processed_result);
 //        processed_result.count=processed_result.rects.size();
 //        processed_result.duration=1;
 //        processed_result.exist=(processed_result.rects.size()>0)?1:0;
@@ -290,8 +291,9 @@ protected:
                 //  frame960x540=frame.resize(960,540);
                 // cv::resize(frame, frame960x540, cv::Size(960,540) );
                 bool ret=process(frame,rst);
-                if(ret){
-                    ba.clear();
+            //  if(ret){
+                     if(true){
+                            ba.clear();
                     ba.append(rst);
                     //  emit output(ba);
                     send_out(ba);
