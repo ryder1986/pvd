@@ -65,9 +65,9 @@ private:
 class PvdC4Processor : public VideoProcessor
 {
 public:
-  //  PvdC4Processor():scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,0.8),VideoProcessor()
-      PvdC4Processor():scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,TEST_STEP),VideoProcessor()
-        {
+    //  PvdC4Processor():scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,0.8),VideoProcessor()
+    PvdC4Processor():scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,TEST_STEP),VideoProcessor()
+    {
         loaded=false;
     }
 
@@ -207,9 +207,9 @@ private:
 #endif
         ds.LoadDetector(types,upper_bounds,filenames);
         // You can adjust these parameters for different speed, accuracy etc
-     //   ds.cascade->nodes[0]->thresh += 0.8;
+        //   ds.cascade->nodes[0]->thresh += 0.8;
         ds.cascade->nodes[0]->thresh += TEST_STEP;
-           ds.cascade->nodes[1]->thresh -= 0.095;
+        ds.cascade->nodes[1]->thresh -= 0.095;
     }
 
 
@@ -282,11 +282,11 @@ private:
         double end_time = cv::getTickCount();
         double spend_time;
         spend_time = 1000 * (fabs(end_time - start_time) / cv::getTickFrequency());
-           std::cout << "time : " << spend_time << " ms" << std::endl;
+        std::cout << "time : " << spend_time << " ms" << std::endl;
 
         if(result_rects.size()>0)
         {
-          //  prt(info,"get ppl");
+            //  prt(info,"get ppl");
             ret=true;
             rst.rects=result_rects;
         }
