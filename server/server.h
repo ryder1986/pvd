@@ -102,8 +102,6 @@ public  slots:
             }
         }
 #if 1
-        //     /   qDebug()<<"addr :"<<addr.toString();
-        prt(debug,"%s",addr.toString().toStdString().data());
         udp_skt->writeDatagram(datagram.data(), datagram.size(),
                                addr, Pvd::CLIENT_REPORTER_PORT);
 #else
@@ -144,15 +142,16 @@ public:
 public slots:
     int handle_client_request(QByteArray request,QByteArray &ret,void *addr)
     {
-
         ClientSession *cs=(ClientSession *)addr;
         DataPacket data_src(request);
         DataPacket data_dst;
         int type=data_src.get_value("type").toInt();
         int idx=data_src.get_value("cam_index").toInt();
         data_dst.set_value("type",type);
+        data_dst.set_value("return",Pvd::RETURN::OK);
         if(!type){
             ret=data_dst.data();//tell client to update
+            data_dst.set_value("return",Pvd::RETURN::PARSE_ERROR);
             return 1;
         }
         bool config_changed=false;
@@ -179,23 +178,30 @@ public slots:
             }
         }
         if(!cs->is_valid()&&type!=Pvd::GET_CONFIG){// no valid, no update
-            data_dst.set_value("type",Pvd::NEED_UPDATE);
+            data_dst.set_value("return",Pvd::RETURN::NEED_UPDATE);
             ret=data_dst.data();
             return 1;
         }
 
         switch(type){
+
         case Pvd::GET_CONFIG:
         {
+#if 0
             QJsonObject cfg;
             cfg_2_obj(cfg);
             data_dst.set_value("config",cfg);
+#else
+            QJsonValue jv=cfg_2_jv();
+            data_dst.set_value("config",jv.toObject());
+#endif
             break;
         }
 
         case Pvd::SET_CONFIG:
         {
-            obj_2_cfg(data_src.get_value("config").toObject());
+          //  obj_2_cfg(data_src.get_value("config").toObject());
+            jv_2_cfg(data_src.get_value("config"));
             save_cfg();
             camera_manager->restart_cameras(cfg.cams_cfg);
             break;
@@ -205,7 +211,7 @@ public slots:
         {
             if(idx>camera_manager->cameras.size()||idx<1){
                 prt(info,"%d out of range ",idx);
-                data_dst.set_value("type",Pvd::NEED_UPDATE);
+                data_dst.set_value("return",Pvd::RETURN::INVALID_VALUE);
             }else
                 camera_manager->cameras[idx-1]->add_watcher(cs->ip());
             break;
@@ -214,7 +220,7 @@ public slots:
         {
             if(idx>camera_manager->cameras.size()||idx<1){
                 prt(info,"%d out of range ",idx);
-                data_dst.set_value("type",Pvd::NEED_UPDATE);
+                data_dst.set_value("return",Pvd::RETURN::INVALID_VALUE);
 
             }else{
                 camera_manager->cameras[idx-1]->del_watcher(cs->ip());
@@ -226,40 +232,24 @@ public slots:
         {
             if(idx>camera_manager->cameras.size()||idx<1){
                 prt(info,"%d out of range ",idx);
-                data_dst.set_value("type",Pvd::NEED_UPDATE);
+                data_dst.set_value("return",Pvd::RETURN::INVALID_VALUE);
                 break;
             }
             if(camera_manager->modify_camera(idx,data_src.get_value("alg"),CameraManager::MODIFY_ALG)){
                 cfg.cams_cfg=camera_manager->config();
                 save_cfg();
             }else{
-                data_dst.set_value("type",Pvd::NEED_UPDATE);
+                data_dst.set_value("return",Pvd::RETURN::INVALID_VALUE);
             }
 
             break;
         }
-//        case Pvd::CHANGE_CAMERA_ALG:
-//        {
-//            if(idx>camera_manager->cameras.size()||idx<1){
-//                prt(info,"%d out of range ",idx);
-//                data_dst.set_value("type",Pvd::NEED_UPDATE);
-//                break;
-//            }
-//            if(camera_manager->modify_camera(idx,data_src.get_value("alg"),CameraManager::MODIFY_ALG)){
-//                cfg.cams_cfg=camera_manager->config();
-//                save_cfg();
-//            }else{
-//                data_dst.set_value("type",Pvd::NEED_UPDATE);
-//            }
-
-//            break;
-//        }
 
         case Pvd::MOD_CAMERA_ATTR:
         {
             if(idx>camera_manager->cameras.size()||idx<1){
                 prt(info,"%d out of range ",idx);
-                data_dst.set_value("type",Pvd::NEED_UPDATE);
+                data_dst.set_value("return",Pvd::RETURN::INVALID_VALUE);
                 break;
             }
 
@@ -278,7 +268,7 @@ public slots:
                 cfg.cams_cfg=camera_manager->config();
                 save_cfg();
             }else{
-                data_dst.set_value("type",Pvd::NEED_UPDATE);
+                data_dst.set_value("return",Pvd::RETURN::INVALID_VALUE);
             }
             break;
         }
@@ -287,7 +277,7 @@ public slots:
         {
             if(idx>camera_manager->cameras.size()||idx<1){
                 prt(info,"%d out of range ",idx);
-                data_dst.set_value("type",Pvd::NEED_UPDATE);
+                data_dst.set_value("return",Pvd::RETURN::INVALID_VALUE);
             }else{
                 camera_manager->delete_camera(idx);
                 cfg.cams_cfg=camera_manager->config();
@@ -364,39 +354,78 @@ public slots:
 private:
     void load_cfg()
     {
+        QJsonValue jv;
         QJsonObject obj;
         database->load(obj);
-        obj_2_cfg(obj);
+        jv=obj;
+//        obj_2_cfg(obj);
+        jv_2_cfg(jv);
     }
-
+#if 0
     void save_cfg()
     {
         QJsonObject cfg;
         cfg_2_obj(cfg);
         database->save(cfg);
     }
-
-    void cfg_2_obj(QJsonObject &obj)
+#else
+    void save_cfg()
     {
-        obj["device_name"]=cfg.server_name;
-        obj["deviceID"]=cfg.dev_id;
-        obj["signal_machine_ip"]=cfg.sig_ip;
-        obj["signal_machine_port"]=cfg.sig_port;
-        obj["ntp_ip"]=cfg.ntp_ip;
-        obj["ntp_port"]=cfg.ntp_port;
-        obj["cameras"]=cfg.cams_cfg;
-    }
+//        QJsonObject cfg;
+//        cfg_2_obj(cfg);
 
-    void obj_2_cfg(QJsonObject obj)
-    {
-        cfg.server_name=obj["device_name"].toString();
-        cfg.dev_id=obj["deviceID"].toInt();
-        cfg.sig_ip=obj["signal_machine_ip"].toString();
-        cfg.sig_port= obj["signal_machine_port"].toInt();
-        cfg.ntp_ip=obj["ntp_ip"].toString();
-        cfg.ntp_port=obj["ntp_port"].toInt();
-        cfg.cams_cfg=obj["cameras"];
+        QJsonValue cfg=cfg_2_jv();
+        database->save(cfg.toObject());
     }
+#endif
+//    void cfg_2_obj(QJsonObject &obj)
+//    {
+//        obj["device_name"]=cfg.server_name;
+//        obj["deviceID"]=cfg.dev_id;
+//        obj["signal_machine_ip"]=cfg.sig_ip;
+//        obj["signal_machine_port"]=cfg.sig_port;
+//        obj["ntp_ip"]=cfg.ntp_ip;
+//        obj["ntp_port"]=cfg.ntp_port;
+//        obj["cameras"]=cfg.cams_cfg;
+//    }
+    QJsonValue cfg_2_jv()
+    {
+        QJsonObject obj;
+        QJsonValue jv;
+        DataPacket pkt(obj);
+        pkt.set_value("device_name",cfg.server_name);
+        pkt.set_value("deviceID",cfg.dev_id);
+        pkt.set_value("signal_machine_ip",cfg.sig_ip);
+        pkt.set_value("signal_machine_port",cfg.sig_port);
+        pkt.set_value("ntp_ip",cfg.ntp_ip);
+        pkt.set_value("ntp_port",cfg.ntp_port);
+        pkt.set_value("cameras",cfg.cams_cfg);
+        jv= pkt.object();
+        return jv;
+    }
+    void jv_2_cfg(QJsonValue jv)
+    {
+          DataPacket pkt(jv.toObject());
+     //     cfg.server_name=pkt.get_value("device_name",cam_cfg.server_name);
+
+          cfg.server_name=pkt.get_value("device_name").toString();
+          cfg.dev_id=pkt.get_value("deviceID").toInt();
+          cfg.sig_ip=pkt.get_value("signal_machine_ip").toString();
+          cfg.sig_port= pkt.get_value("signal_machine_port").toInt();
+          cfg.ntp_ip=pkt.get_value("ntp_ip").toString();
+          cfg.ntp_port=pkt.get_value("ntp_port").toInt();
+          cfg.cams_cfg=pkt.get_value("cameras");
+    }
+//    void obj_2_cfg(QJsonObject obj)
+//    {
+//        cfg.server_name=obj["device_name"].toString();
+//        cfg.dev_id=obj["deviceID"].toInt();
+//        cfg.sig_ip=obj["signal_machine_ip"].toString();
+//        cfg.sig_port= obj["signal_machine_port"].toInt();
+//        cfg.ntp_ip=obj["ntp_ip"].toString();
+//        cfg.ntp_port=obj["ntp_port"].toInt();
+//        cfg.cams_cfg=obj["cameras"];
+//    }
 
     QTcpServer *server;//server for reply all clients request ,execute client cmds,like add cam,del cam, reconfigure cam,etc..
     FileDatabase *database;//hold config data;

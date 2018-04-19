@@ -23,10 +23,15 @@ public:
         MOD_CAMERA_ALG,
         CAM_OUTPUT_OPEN,
         CAM_OUTPUT_CLOSE,
-        NEED_UPDATE,
         HEART,
         REBOOT,
         MOD_DEVICE_ATTR
+    };
+    enum RETURN{
+        OK=0,
+        PARSE_ERROR,
+        NEED_UPDATE,
+        INVALID_VALUE
     };
     enum PORTS{
         SERVER_PORT=12345,

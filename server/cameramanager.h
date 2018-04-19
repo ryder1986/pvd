@@ -82,6 +82,7 @@ public:
         }else{
             return ret;
         }
+
         cam_cfgs[index-1]=cameras[index-1]->config();
         return ret;
     }

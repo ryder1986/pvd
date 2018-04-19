@@ -35,8 +35,8 @@ public:
     bool process(Mat img_src)
     {
         // Mat img=img_src(arg.area);
-       Mat img=img_src;
-           m_result r;
+        Mat img=img_src;
+        m_result r;
         r.width=img_src.cols;
         r.height=img_src.rows;
         r.back_count=0;
@@ -100,10 +100,10 @@ private:
 
 
 
- // bool real_process(Mat &mt, m_result &rst)
+    // bool real_process(Mat &mt, m_result &rst)
     bool real_process(Mat &mt, std::vector<cv::Rect> &result_rects)
-      {
-      //  std::vector<cv::Rect> result_rects;
+    {
+        //  std::vector<cv::Rect> result_rects;
         result_rects.clear();
         CascadeClassifier cascade;
         bool ret=false;
@@ -210,7 +210,8 @@ public:
         }else
             ret=false;
         if(r.rects.size()>0){
-             r.exist=true;
+            r.count=r.rects.size();
+            r.exist=true;
         }
         QJsonObject obj;
         DataPacket pkt(obj);
@@ -468,15 +469,15 @@ private:
         double end_time = cv::getTickCount();
         double spend_time;
         spend_time = 1000 * (fabs(end_time - start_time) / cv::getTickFrequency());
-  //      std::cout << "time : " << spend_time << " ms" << std::endl;
+        //      std::cout << "time : " << spend_time << " ms" << std::endl;
 
         if(result_rects.size()>0)
         {
             //  prt(info,"get ppl");
             ret=true;
-//            rst.rects=result_rects;
+            //            rst.rects=result_rects;
         }
-          rst.rects=result_rects;
+        rst.rects=result_rects;
         return ret;
 
     }

@@ -12,8 +12,6 @@
 //#include "pdprocessor.h"
 #include "../PvdProcessor/pvdprocessor.h"
 #include <mutex>
-#define TEST
-#undef TEST
 using namespace cv;
 class Camera : public QThread
 {
@@ -40,7 +38,6 @@ public:
     {
         frame_rate=0;
         quit=false;
-
         jv_2_cfg(jv);
         start_cam();
         tmr=new QTimer;
@@ -76,13 +73,19 @@ public:
     }
     bool modify_alg(QJsonValue jv)
     {
-        int ret=true;
+
         DataPacket pkt(jv.toObject());
-        cam_cfg.alg.selected_alg= pkt.get_value("selected_alg").toString();
-        cam_cfg.alg.pvd_c4= pkt.get_value("pvd_c4");
-        cam_cfg.alg.pvd_hog= pkt.get_value("pvd_hog");
+        QJsonValue jv_selected_alg= pkt.get_value("selected_alg");
+        QJsonValue jv_pvd_c4=  pkt.get_value("pvd_c4");
+        QJsonValue jv_pvd_hog= pkt.get_value("pvd_hog");
+        if(jv_selected_alg.isNull()||jv_pvd_c4.isNull()||jv_pvd_hog.isNull()){
+            return false;
+        }
+        cam_cfg.alg.selected_alg= jv_selected_alg.toString();
+        cam_cfg.alg.pvd_c4= jv_pvd_c4;
+        cam_cfg.alg.pvd_hog= jv_pvd_hog;
         restart_processor();
-        return ret;
+        return true;
     }
     void modify_attr(QJsonValue v)
     {
@@ -120,24 +123,16 @@ public:
 private:
     void restart_processor()
     {
-        prt(info,"try to lcok");
-              // lock.lock();
         mtx.lock();
-                   prt(info,"lk done");
         QString str=cam_cfg.alg.selected_alg;
         if(processor)
             delete processor;
         if(str=="pvd_c4"){
-//            QJsonValue v=cam_cfg.alg.toObject()["pvd_c4"].toObject()["detect_area"];
-//            detect_rect=area_2_rect(v);
             processor=new PvdC4Processor(cam_cfg.alg.pvd_c4);
         }else if(str=="pvd_hog"){
-//            QJsonValue v=cam_cfg.alg.toObject()["pvd_hog"].toObject()["detect_area"] ;
-//            detect_rect=area_2_rect(v);
             processor=new PvdHogProcessor(cam_cfg.alg.pvd_hog);
         }
         mtx.unlock();
-        //   lock.unlock();
     }
 
     void start_cam()
@@ -146,6 +141,7 @@ private:
         restart_processor();
         start();
     }
+
     void stop_cam()
     {
         delete tmr;
@@ -214,11 +210,11 @@ protected:
         QByteArray rst;
         while(!quit){
             //   prt(info,"runing %s",cam_cfg.url.toStdString().data());
-          // lock.lock();
+            // lock.lock();
             mtx.lock();
             if(src->get_frame(frame)&&frame.cols>0&&frame.rows>0){
                 frame_rate++;
-               // bool ret=process(frame,rst);
+                // bool ret=process(frame,rst);
                 bool ret=processor->process(frame);
                 send_out(processor->get_rst());
                 //  if(ret){
@@ -231,12 +227,12 @@ protected:
             }else{
                 //prt(info,"get no frame");
             }
-          //  lock.unlock();
+            //  lock.unlock();
 
             mtx.unlock();
-            QThread::msleep(10);
+            QThread::msleep(1);
         }
-        QThread::msleep(10);
+        // QThread::msleep(10);
     }
 
 signals:
@@ -259,6 +255,6 @@ private:
     bool quit;
     QMutex lock;
     mutex mtx;
-  };
+};
 
 #endif // CAMERA_H

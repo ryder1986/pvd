@@ -31,7 +31,7 @@
             "camera_port": 5000,
             "direction": 3,
             "password": "admin",
-            "url": "rtsp://192.168.1.95:554/av0_1",
+            "url": "rtsp://192.168.1.97:554/av0_1",
             "user_name": "admin"
         }
     ],
