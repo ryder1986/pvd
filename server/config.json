@@ -3,38 +3,8 @@
         {
             "alg": {
                 "pvd_c4": {
-                    "detect_area": [
-                        {
-                            "x": 91,
-                            "y": 263
-                        },
-                        {
-                            "x": 344,
-                            "y": 268
-                        },
-                        {
-                            "x": 597,
-                            "y": 462
-                        },
-                        {
-                            "x": 152,
-                            "y": 471
-                        }
-                    ]
-                },
-                "selected_alg": "pvd_c4"
-            },
-            "camera_id": 1,
-            "camera_ip": "192.168.1.97",
-            "camera_port": 5000,
-            "direction": 2,
-            "password": "admin",
-            "url": "rtsp://192.168.1.97:554/av0_1",
-            "user_name": "admin"
-        },
-        {
-            "alg": {
-                "pvd_c4": {
+			"step":2,
+		"ratio":"0.8",
                     "detect_area": [
                         {
                             "x": 119,
@@ -57,7 +27,7 @@
                 "selected_alg": "pvd_c4"
             },
             "camera_id": 2,
-            "camera_ip": "192.168.1.95",
+            "camera_ip": "192.168.1.97",
             "camera_port": 5000,
             "direction": 3,
             "password": "admin",

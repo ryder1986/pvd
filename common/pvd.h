@@ -1,6 +1,7 @@
 #ifndef PVD_H
 #define PVD_H
 #include <cstring>
+#include <QtCore>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonValue>
@@ -55,6 +56,11 @@ public:
         QJsonDocument doc(obj);
         return doc.toJson();
     }
+    QJsonObject object()
+    {
+        return obj;
+    }
+
     template <typename tp>
     void set_value(QString name,tp value)
     {

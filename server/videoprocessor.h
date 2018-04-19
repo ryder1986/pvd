@@ -8,33 +8,36 @@
 #include <opencv2/ml/ml.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 #include "tool.h"
+#include "pvd.h"
 using namespace std;
 using namespace cv;
 class VideoProcessor
 {
 
 public:
-    typedef struct process_result{
-        int width;
-        int height;
-        bool exist;
-        int count;
-        int front_count;
-        int back_count;
-        int other_count;
-        int duration;
-        vector <Rect> rects;
-    }m_result;
 
+    QByteArray alg_rst;
     VideoProcessor()
     {
 
     }
-    virtual  bool real_process( Mat &, m_result &)
+    virtual  void prepare(QJsonValue v)
+    {
+
+    }
+    virtual  bool process( Mat img)
     {
         return false;
     }
-
+    virtual  QByteArray get_rst()
+    {
+        QByteArray ba;
+            return ba ;
+    }
+//    virtual  bool real_process( Mat &, m_result &)
+//    {
+//        return false;
+//    }
     virtual void init()
     {
 

@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 
-QT       -= core gui
+QT       -= gui
 CONFIG+=c++11
 TARGET = PvdProcessor
 TEMPLATE = lib

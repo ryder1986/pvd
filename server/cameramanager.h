@@ -42,12 +42,11 @@ public:
     {
         bool ret=false;
 
-        if(index>cameras.size()+1 )
+        if(index>cameras.size()+1)
         {
             index=cameras.size()+1;
         }
         if(index<1){
-
             prt(fatal,"index %d out of range",index);
         }else{
             prt(fatal,"insert cam  %d  ",index);
@@ -58,15 +57,6 @@ public:
         }
         return ret;
     }
-
-    //    void insert_camera(int index,QJsonObject cfg)
-    //    {
-    //        // check_index(index);
-    //        if(check_index(index)){
-    //            cameras.insert(index,new Camera(cfg));
-    //            cam_cfgs.insert(index,cfg);
-    //        }
-    //    }
     void delete_camera(int index)
     {
         //   check_index(index);
@@ -87,24 +77,11 @@ public:
             return ret;
         }
 
-        if( cameras[index-1]->modify_alg(v)){
+        if(cameras[index-1]->modify_alg(v)){
             ret=true;
         }else{
             return ret;
         }
-//        switch(mod_type){
-//        case MODIFY_ALG:
-//            cameras[index-1]->modify_alg(v);
-//            break;
-//        case MODIFY_URL:
-//            cameras[index-1]->modify_url(v);
-//            break;
-//        case MODIFY_DIRECTION:
-//            cameras[index-1]->modify_direction(v);
-//            break;
-//        default:break;
-
-//        }
         cam_cfgs[index-1]=cameras[index-1]->config();
         return ret;
     }

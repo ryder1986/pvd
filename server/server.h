@@ -238,7 +238,22 @@ public slots:
 
             break;
         }
+//        case Pvd::CHANGE_CAMERA_ALG:
+//        {
+//            if(idx>camera_manager->cameras.size()||idx<1){
+//                prt(info,"%d out of range ",idx);
+//                data_dst.set_value("type",Pvd::NEED_UPDATE);
+//                break;
+//            }
+//            if(camera_manager->modify_camera(idx,data_src.get_value("alg"),CameraManager::MODIFY_ALG)){
+//                cfg.cams_cfg=camera_manager->config();
+//                save_cfg();
+//            }else{
+//                data_dst.set_value("type",Pvd::NEED_UPDATE);
+//            }
 
+//            break;
+//        }
 
         case Pvd::MOD_CAMERA_ATTR:
         {
@@ -249,9 +264,8 @@ public slots:
             }
 
             if(idx<=camera_manager->cameras.size()&&idx>0){
-                camera_manager->modify_attr(idx,data_src.get_value("camera_args"));
-                QJsonValue jv= camera_manager->config();
-                cfg.cams_cfg=jv;
+                camera_manager->modify_attr(idx,data_src.get_value("camera_args")); 
+                cfg.cams_cfg=camera_manager->config();
                 save_cfg();
             }
 

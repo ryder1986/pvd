@@ -96,24 +96,6 @@ public:
     //tmp_msg:last slice of buffer(maybe begining of json string)
     bool get_valid_buf(QByteArray &src,QByteArray &dst)
     {
-        //        bool ret=false;
-
-        //        int begin_symbol_num=count_begin_symbol(src);
-        //        int end_symbol_num=end_begin_symbol(src);
-        //        if((begin_symbol_num>end_symbol_num&&objs_count==0)||begin_symbol_num==0)
-        //        {
-        //            ret=false;
-        //        }else{
-        //            dst.clear();
-        //            dst.append(src);
-        //            int endpos=0,left=0;
-        //            find_pos(dst,endpos,left);
-        //            dst.remove(endpos,left);
-        //            src.truncate(src.size()-left);
-        //        }
-        //        return false;
-
-
         if(try_get_obj_buf(src,dst)){
             src.remove(0,dst.size());
             return true;
@@ -164,29 +146,6 @@ public:
             rst.rects.push_back(rct1);
         }
         // rst.rects
-
-
-
-
-        //        rst.height=obj["height"];
-        //        rst.exist=obj["exist"];
-        //        rst.count= obj["count"];
-        //        rst.front_count=obj["front_count"];
-        //        rst.back_count= obj["back_count"];
-        //        rst.other_count=obj["other_count"];
-        //        rst.duration=obj["duration"];
-
-
-        //        QJsonArray rects=obj["rects"];;
-        //        foreach (QJsonValue v, rects) {
-        //            //   QJsonObject rc;
-
-        //            Rect rct;
-        //            rct.x=r["x"];
-        //            rct.y=r["y"];
-        //            rst.rects.append(rect);
-        //        }
-
 
     }
     QByteArray tmp_msg;

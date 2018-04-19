@@ -3,16 +3,107 @@
 #include "../common/tool.h"
 #include "../server/videoprocessor.h"
 #include "C4Common.h"
-#define TEST_STEP 0.5
+#include "pvd.h"
+#define TEST_STEP 0.8
 class PvdHogProcessor : public VideoProcessor
 {
+    typedef struct args{
+        Rect area;
+    }arg_t;
+    arg_t arg;
+    typedef struct process_result{
+        int width;
+        int height;
+        bool exist;
+        int count;
+        int front_count;
+        int back_count;
+        int other_count;
+        int duration;
+        vector <Rect> rects;
+    }m_result;
+
 public:
-    PvdHogProcessor():VideoProcessor()
+    PvdHogProcessor(QJsonValue):VideoProcessor()
     {
     }
-    bool real_process(Mat &mt, m_result &rst)
+    QByteArray get_rst()
     {
-        std::vector<cv::Rect> result_rects;
+        return alg_rst;
+    }
+
+    bool process(Mat img_src)
+    {
+        // Mat img=img_src(arg.area);
+       Mat img=img_src;
+           m_result r;
+        r.width=img_src.cols;
+        r.height=img_src.rows;
+        r.back_count=0;
+        r.front_count=0;
+        r.count=0;
+        r.exist=false;
+        r.duration=0;
+        r.other_count=0;
+        bool ret=false;
+        vector <Rect> v;
+        if(real_process(img,v)){
+            ret=true;
+        }else
+            ret=false;
+        r.rects=v;
+        QJsonObject obj;
+        DataPacket pkt(obj);
+        pkt.set_value("width",r.width);
+        pkt.set_value("height",r.height);
+        pkt.set_value("back_count",r.back_count);
+        pkt.set_value("front_count",r.front_count);
+        pkt.set_value("count",r.count);
+        pkt.set_value("exist",r.exist);
+        pkt.set_value("duration",r.duration);
+        pkt.set_value("other_count",r.other_count);
+        QJsonArray ja;
+        foreach (Rect rct,r.rects) {
+            QJsonObject obj_rct;
+            obj_rct["x"]=rct.x+arg.area.x;
+            obj_rct["y"]=rct.y+arg.area.y;
+            obj_rct["w"]=rct.width;
+            obj_rct["h"]=rct.height;
+            ja.append(obj_rct);
+        }
+        pkt.set_value("rects",ja);
+        alg_rst=pkt.data();
+        return ret;
+    }
+
+private:
+    Rect area_2_rect(QJsonValue area)
+    {
+        int x_min=10000;
+        int y_min=10000;
+        int x_max=0;
+        int y_max=0;
+        foreach (QJsonValue v, area.toArray()) {
+            int x= v.toObject()["x"].toInt();
+            int y= v.toObject()["y"].toInt();
+            if(x<x_min)
+                x_min=x;
+            if(x>x_max)
+                x_max=x;
+            if(y<y_min)
+                y_min=y;
+            if(y>y_max)
+                y_max=y;
+        }
+        return Rect(x_min,y_min,x_max-x_min,y_max-y_min);
+    }
+
+
+
+ // bool real_process(Mat &mt, m_result &rst)
+    bool real_process(Mat &mt, std::vector<cv::Rect> &result_rects)
+      {
+      //  std::vector<cv::Rect> result_rects;
         result_rects.clear();
         CascadeClassifier cascade;
         bool ret=false;
@@ -64,14 +155,108 @@ private:
 
 class PvdC4Processor : public VideoProcessor
 {
+    typedef struct args{
+        double scale_ratio;
+        int scan_step;
+        Rect area;
+    }arg_t;
+    arg_t arg;
+    typedef struct process_result{
+        int width;
+        int height;
+        bool exist;
+        int count;
+        int front_count;
+        int back_count;
+        int other_count;
+        int duration;
+        vector <Rect> rects;
+    }m_result;
 public:
     //  PvdC4Processor():scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,0.8),VideoProcessor()
-    PvdC4Processor():scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,TEST_STEP),VideoProcessor()
+    PvdC4Processor(QJsonValue jv):scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,TEST_STEP),VideoProcessor()
     {
         loaded=false;
+        set_config(jv);
+    }
+    void set_config(QJsonValue jv)
+    {
+        DataPacket pkt(jv.toObject());
+        arg.scale_ratio= pkt.get_value("ratio").toString().toDouble();
+        arg.scan_step=pkt.get_value("step").toInt();
+        QJsonValue area=pkt.get_value("detect_area");
+        arg.area=area_2_rect(area);
+    }
+    QByteArray get_rst()
+    {
+        return alg_rst;
+    }
+
+    bool process(Mat img_src)
+    {
+        Mat img=img_src(arg.area);
+        m_result r;
+        r.width=img_src.cols;
+        r.height=img_src.rows;
+        r.back_count=0;
+        r.front_count=0;
+        r.count=0;
+        r.exist=false;
+        r.duration=0;
+        r.other_count=0;
+        bool ret=false;
+        if(real_process(img,r)){
+            ret=true;
+        }else
+            ret=false;
+        if(r.rects.size()>0){
+             r.exist=true;
+        }
+        QJsonObject obj;
+        DataPacket pkt(obj);
+        pkt.set_value("width",r.width);
+        pkt.set_value("height",r.height);
+        pkt.set_value("back_count",r.back_count);
+        pkt.set_value("front_count",r.front_count);
+        pkt.set_value("count",r.count);
+        pkt.set_value("exist",r.exist);
+        pkt.set_value("duration",r.duration);
+        pkt.set_value("other_count",r.other_count);
+        QJsonArray ja;
+        foreach (Rect rct,r.rects) {
+            QJsonObject obj_rct;
+            obj_rct["x"]=rct.x+arg.area.x;
+            obj_rct["y"]=rct.y+arg.area.y;
+            obj_rct["w"]=rct.width;
+            obj_rct["h"]=rct.height;
+            ja.append(obj_rct);
+        }
+        pkt.set_value("rects",ja);
+        alg_rst=pkt.data();
+        return ret;
     }
 
 private:
+    Rect area_2_rect(QJsonValue area)
+    {
+        int x_min=10000;
+        int y_min=10000;
+        int x_max=0;
+        int y_max=0;
+        foreach (QJsonValue v, area.toArray()) {
+            int x= v.toObject()["x"].toInt();
+            int y= v.toObject()["y"].toInt();
+            if(x<x_min)
+                x_min=x;
+            if(x>x_max)
+                x_max=x;
+            if(y<y_min)
+                y_min=y;
+            if(y>y_max)
+                y_max=y;
+        }
+        return Rect(x_min,y_min,x_max-x_min,y_max-y_min);
+    }
     const int HUMAN_height = 108;
     const int HUMAN_width = 36;
     const int HUMAN_xdiv = 9;
@@ -225,6 +410,7 @@ private:
 
 
         int step_size = 9;
+        //int step_size = 2;
         //   float rate = 0.5;
         bool rect_organization = true;
         IntImage<double> original;
@@ -282,14 +468,15 @@ private:
         double end_time = cv::getTickCount();
         double spend_time;
         spend_time = 1000 * (fabs(end_time - start_time) / cv::getTickFrequency());
-        std::cout << "time : " << spend_time << " ms" << std::endl;
+  //      std::cout << "time : " << spend_time << " ms" << std::endl;
 
         if(result_rects.size()>0)
         {
             //  prt(info,"get ppl");
             ret=true;
-            rst.rects=result_rects;
+//            rst.rects=result_rects;
         }
+          rst.rects=result_rects;
         return ret;
 
     }
