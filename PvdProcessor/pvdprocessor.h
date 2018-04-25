@@ -174,11 +174,18 @@ class PvdC4Processor : public VideoProcessor
     }m_result;
 public:
     //  PvdC4Processor():scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,0.8),VideoProcessor()
-    PvdC4Processor(QJsonValue jv):scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,TEST_STEP),VideoProcessor()
+    PvdC4Processor(QJsonValue jv):VideoProcessor()
     {
         loaded=false;
         set_config(jv);
+        p_scanner=new DetectionScanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,arg.scale_ratio);
+
     }
+    ~PvdC4Processor()
+    {
+        delete p_scanner;
+    }
+
     void set_config(QJsonValue jv)
     {
         DataPacket pkt(jv.toObject());
@@ -394,7 +401,7 @@ private:
         ds.LoadDetector(types,upper_bounds,filenames);
         // You can adjust these parameters for different speed, accuracy etc
         //   ds.cascade->nodes[0]->thresh += 0.8;
-        ds.cascade->nodes[0]->thresh += TEST_STEP;
+        ds.cascade->nodes[0]->thresh += arg.scale_ratio;
         ds.cascade->nodes[1]->thresh -= 0.095;
     }
 
@@ -404,7 +411,7 @@ private:
         std::vector<cv::Rect>  result_rects;
         bool ret=false;
         if(!loaded){
-            LoadCascade(scanner);
+            LoadCascade(*p_scanner);
             std::cout<<"Detectors loaded."<<std::endl;
             loaded=true;
         }
@@ -432,7 +439,7 @@ private:
 
         original.Load( detect_region );
         std::vector<CRect> results;
-        scanner.FastScan(original, results, step_size);
+        p_scanner->FastScan(original, results, arg.scan_step);
 
         if(rect_organization)
         {
@@ -483,6 +490,7 @@ private:
     }
 private:
     bool loaded;
-    DetectionScanner scanner;
+  //  DetectionScanner scanner;
+      DetectionScanner *p_scanner;
 };
 #endif // PVDPROCESSOR_H
