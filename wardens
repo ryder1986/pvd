@@ -3,16 +3,18 @@
 # warden	This shell script takes care of user application.
 
 # Source function library.
-. /etc/rc.d/init.d/functions
-export LD_LIBRARY_PATH=./lib:./lib/ffmpeg_2_5_3/lib:./lib/va/lib
-ifup p4p1 &
-sleep 10
-iptables -F 
-
+#export LD_LIBRARY_PATH=./lib:./lib/ffmpeg_2_5_3/lib:./lib/va/lib
+#ifup p4p1 &
+#sleep 10
+#iptables -F 
+ifconfig   enp1s0 192.168.1.110 netmask  255.255.255.0
+route add default gw 192.168.1.1
+echo  "nameserver 114.114.114.114" >> /etc/resolv.conf
 #################################################################
 ##############   edit this section in needed    #################
 RM_CMD=1
-BOOT_CMD=2
+#BOOT_CMD=2
+BOOT_CMD=25 # ban reboot 
 
 ###监护进程休眠时间(secs)
 SLEEPTIME=25
@@ -186,7 +188,7 @@ checkself()
 	#echo $ret
 	if [ ${ret} -gt 2 ]
     	then
-		action $"Starting $prog: ""		exist (已存在) " /bin/false
+		#action $"Starting $prog: ""		exist (已存在) " /bin/false
 		exit
 	fi
 }
@@ -203,9 +205,11 @@ killprog()
 		sleep 1
 		/bin/kill -0 ${ret} >/dev/null 2>&1 || ret=0
 		if [ $ret -eq 0 ];then
-			action $"Stopping $1: " /bin/true
+		 echo "111"
+	#		action $"Stopping $1: " /bin/true
 		else
-			action $"Stopping $1: 停止进程($ret)失败" /bin/false
+		echo "222"
+	#		action $"Stopping $1: 停止进程($ret)失败" /bin/false
 		fi
 	fi		
 }
@@ -242,7 +246,7 @@ start()
 	Date=` date +'%Y-%m-%d,%H:%M:%S' `;
        echo "当前时间：$Date"
 	echo "启动时间：$Date"	>>$OUTPUT
-	action $"Starting $prog: " /bin/true
+#	action $"Starting $prog: " /bin/true
 	GuardProg
 }
 
@@ -277,15 +281,18 @@ stop()
 	ret=$( ps -ef | grep $prog | grep -v "grep" | grep start |awk 'END{print $2}' )
 	if [ -z ${ret} ]
     then
-		action $"Stopping $prog: ""		not start (没有启动)" /bin/false
+echo "333"
+	#	action $"Stopping $prog: ""		not start (没有启动)" /bin/false
 	else
 		kill -9 $ret >/dev/null 2>&1
 		sleep 2
 		/bin/kill -0 ${ret} >/dev/null 2>&1 || ret=0
 		if [ $ret -eq 0 ];then
-			action $"Stopping $prog: "            /bin/true
+echo "444"
+#			action $"Stopping $prog: "            /bin/true
 		else
-			action $"Stopping $prog: 停止进程($ret)失败" /bin/false
+echo "555"
+#			action $"Stopping $prog: 停止进程($ret)失败" /bin/false
 		fi
 	fi
 	
