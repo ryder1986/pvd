@@ -37,7 +37,7 @@ unix{
     INCLUDEPATH +="$$ALGPATH/include"
     message(alg  in $$ALGPATH/include)
     LIBS+=-L$$CVPATH/$$CV_PREFIX/lib -lopencv_core -lopencv_highgui \
-       -lopencv_objdetect -lopencv_imgproc -lopencv_ml   -lopencv_video  -lX11
+       -lopencv_objdetect -lopencv_imgproc -lopencv_ml   -lopencv_video
 
     QMAKE_LIBS+=-lpthread
 }
@@ -53,3 +53,11 @@ OPENCV_PATH=E:\repo-github\libs\third-party\opencv\opencv-vs2013-x86
         -lopencv_objdetect249d -lopencv_imgproc249d -lopencv_ml249d  -lopencv_video249d
 INCLUDEPATH+="C:\Program Files\Microsoft SDKs\Windows\v7.1A\Include"
 }
+
+
+INCLUDEPATH+=track
+
+SOURCES +=track/Ctracker.cpp track/HungarianAlg.cpp  track/Kalman.cpp
+
+
+HEADERS += track/defines.h track/HungarianAlg.h track/Kalman.h track/Ctracker.h

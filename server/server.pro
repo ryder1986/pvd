@@ -55,3 +55,5 @@ else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../PvdP
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../PvdProcessor/release/PvdProcessor.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../PvdProcessor/debug/PvdProcessor.lib
 else:unix: PRE_TARGETDEPS += $$OUT_PWD/../PvdProcessor/libPvdProcessor.a
+    LIBS+=-L$$CVPATH/$$CV_PREFIX/lib -lopencv_core -lopencv_highgui \
+       -lopencv_objdetect -lopencv_imgproc -lopencv_ml   -lopencv_video

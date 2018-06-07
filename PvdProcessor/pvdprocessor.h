@@ -151,10 +151,23 @@ private:
 private:
     Mat gray_frame;
 };
-
+#include "track/Ctracker.h"
+#include <sys/time.h>
 
 class PvdC4Processor : public VideoProcessor
 {
+    int get_time()
+    {
+        time_t tt;
+        struct timeval tv;
+        tt=time(NULL);
+        gettimeofday(&tv,NULL);
+        return tv.tv_sec*1000+tv.tv_usec/1000;
+    }
+    int get_time_point_ms()
+    {
+        return get_time();
+    }
     typedef struct args{
         double scale_ratio;
         int scan_step;
@@ -170,20 +183,46 @@ class PvdC4Processor : public VideoProcessor
         int back_count;
         int other_count;
         int duration;
+        int flow;
         vector <Rect> rects;
     }m_result;
+
 public:
     //  PvdC4Processor():scanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,0.8),VideoProcessor()
     PvdC4Processor(QJsonValue jv):VideoProcessor()
     {
+
+        enter_id_old=0;
+        leave_id_old=0;
+        enter_id_new=0;
+        leave_id_new=0;
+
+        enter_count=0;
+        leave_count=0;
+        enter_count_old=0;
+        leave_count_old=0;
+        count=0;
+        count_old=0;
+        count_real=0;
+
+
+        flow=0;
+        busy=false;
+        busy2free=false;
+        free2busy=false;
+        busy_time=0;
+        busy_start_time=0;
         loaded=false;
         set_config(jv);
         p_scanner=new DetectionScanner(HUMAN_height,HUMAN_width,HUMAN_xdiv,HUMAN_ydiv,256,arg.scale_ratio);
+        tracker=new CTracker(0.2f, 0.1f, 60.0f, 5, 100);
+
 
     }
     ~PvdC4Processor()
     {
         delete p_scanner;
+        delete tracker;
     }
 
     void set_config(QJsonValue jv)
@@ -217,9 +256,14 @@ public:
         }else
             ret=false;
         if(r.rects.size()>0){
-            r.count=r.rects.size();
+       //     r.count=r.rects.size();
             r.exist=true;
         }
+        if(busy)
+            r.exist=true;
+        r.count=count_real;
+        r.flow=flow;
+        r.duration=busy_time;
         QJsonObject obj;
         DataPacket pkt(obj);
         pkt.set_value("width",r.width);
@@ -230,6 +274,13 @@ public:
         pkt.set_value("exist",r.exist);
         pkt.set_value("duration",r.duration);
         pkt.set_value("other_count",r.other_count);
+        pkt.set_value("flow",r.flow);
+
+
+        if(busy){
+
+            cout<<r.duration<<endl;
+        }
         QJsonArray ja;
         foreach (Rect rct,r.rects) {
             QJsonObject obj_rct;
@@ -409,6 +460,7 @@ private:
     bool real_process( Mat &src_image,m_result &rst)
     {
         std::vector<cv::Rect>  result_rects;
+        std::vector<Point_t>  centers;
         bool ret=false;
         if(!loaded){
             LoadCascade(*p_scanner);
@@ -470,7 +522,63 @@ private:
             real_position.height = (results[i].bottom - results[i].top);
             //   cv::rectangle(detect_region, real_position, cv::Scalar(0,255,0), 2);
             result_rects.push_back(real_position);
+
+            centers.push_back(Point_t(real_position.x + ((float)real_position.width/2),
+                                      real_position.y + ((float)real_position.height/2)));
+
         }
+
+        tracker->Update(centers, result_rects, CTracker::RectsDist);
+        enter_id_new= tracker->NextTrackID;
+        leave_id_new=tracker->LostObjNum;
+        //        std::cout << "enter in num = " << tracker->NextTrackID << std::endl;
+        //       std::cout << "leave out num = " << tracker->LostObjNum << std::endl;
+
+        //       std::cout << "new:"<<enter_id_new<<"     old:"<<enter_id_old<<endl ;
+        enter_count=enter_id_new-enter_id_old;
+        leave_count=leave_id_new-leave_id_old;
+        count=result_rects.size();
+
+        //record state change, TODO: try to make this more senseable
+
+        if(enter_count&&busy==false)
+            free2busy=true;
+        if(enter_flow<=leave_flow&&busy)//&&busy_count==0  add this condition
+            busy2free=true;
+
+        //calculate total flow
+        flow+=enter_count;
+
+        //record start point of busy time(ms)
+        if(free2busy){
+            busy_start_time=get_time_point_ms();
+            free2busy=false;
+            cout <<"--------------->start busy"<<endl;
+            busy=true;
+
+        }
+
+        if(busy){
+
+            enter_flow+=enter_count;
+            leave_flow+=leave_count;
+            count_real=enter_flow-leave_flow;
+            busy_time=get_time_point_ms()-busy_start_time;
+        }else{
+            enter_flow=0;
+            leave_flow=0;
+            busy_time=0;
+            count_real=0;
+        }
+        //calculate busy duration
+        if(busy2free){
+            //    busy_time=get_time_point_ms()-busy_start_time;
+            busy2free=false;
+            busy=false;
+            cout <<"------------------->end busy, passed number:"<<leave_flow<<"time"<<busy_time/1000<<endl;
+
+        }
+
 
 #endif
         double end_time = cv::getTickCount();
@@ -480,17 +588,57 @@ private:
 
         if(result_rects.size()>0)
         {
-            //  prt(info,"get ppl");
             ret=true;
-            //            rst.rects=result_rects;
         }
         rst.rects=result_rects;
+
+        enter_id_old=enter_id_new;
+        leave_id_old=leave_id_new;
+        enter_count_old=enter_count;
+        leave_count_old=leave_count;
+        count_old=count;
+
+        if(enter_count)
+        {
+            cout <<"enter :"<< enter_count<<endl;
+            cout <<"flow :"<< enter_flow<<endl;
+
+        }
+        if(leave_count)
+        {  cout <<"leave :"<< leave_count<<endl;
+            cout <<"flow :"<< leave_flow<<endl;
+        }
         return ret;
 
     }
 private:
     bool loaded;
-  //  DetectionScanner scanner;
-      DetectionScanner *p_scanner;
+    //  DetectionScanner scanner;
+    DetectionScanner *p_scanner;
+    CTracker *tracker;
+
+
+    int enter_id_old;
+    int leave_id_old;
+    int enter_id_new;
+    int leave_id_new;
+
+    int enter_count;
+    int leave_count;
+    int enter_count_old;
+    int leave_count_old;
+    int count;
+    int count_old;
+    int count_real;
+       int enter_flow;
+    int leave_flow;
+
+    int flow;
+    bool busy;
+    bool busy2free;
+    bool free2busy;
+    int busy_time;
+    int busy_start_time;
+
 };
 #endif // PVDPROCESSOR_H
